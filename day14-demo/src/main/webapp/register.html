@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>注册</title>
+    <link href="css/register.css" rel="stylesheet">
+    <style>
+
+        .float{
+            float: left;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+<!--    <h1 id="title">电商后台管理系统</h1>-->
+
+    <div id="loginDiv">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" size="medium"  class="demo-ruleForm">
+            <h1 id="loginMsg">欢迎注册</h1><br>
+
+
+            <el-form-item  prop="username">
+                <div>
+                    <el-link type="primary" style="height: 15px" @click="toLogin">已有账号，登录</el-link>
+                </div>
+
+                <el-input
+                        placeholder="账号"
+                        v-model="ruleForm.username"
+                        prefix-icon="el-icon-user"
+                        clearable
+                        @blur="isRegister(ruleForm.username)">
+                </el-input>
+            </el-form-item>
+
+            <el-form-item  prop="password">
+                <el-input
+                        placeholder="密码"
+                        v-model="ruleForm.password"
+                        prefix-icon="el-icon-lock"
+                        show-password>
+                </el-input>
+            </el-form-item>
+
+            <el-form-item  prop="checkCode" >
+                <el-input
+                        placeholder="验证码"
+                        v-model="checkCode"
+                        class="float"
+                        style="width: 100px; height: 50px;">
+                </el-input>
+
+                <!--验证码图片-->
+                <el-image
+                        class="float"
+                        style="width: 80px; height: 40px;margin-left: 20px;"
+                        :src="url">
+                </el-image>
+
+                <div class="float">
+                    <el-link type="primary" style="height: 15px;margin-left: 5px;">看不清？</el-link>
+                </div>
+            </el-form-item>
+
+
+            <el-form-item>
+                <el-button round type="primary" style="width: 260px" @click="submitForm('ruleForm')">立即注册</el-button>
+            </el-form-item>
+
+
+
+        </el-form>
+    </div>
+
+</div>
+
+<script src="js/vue.js"></script>
+<!-- 引入样式 -->
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+<!-- 引入组件库 -->
+<script src="element-ui/lib/index.js"></script>
+<script src="js/axios-0.18.0.js"></script>
+
+<script>
+    new Vue({
+        el:"#app",
+
+        mounted(){
+
+        },
+
+        methods:{
+            // 跳转到登录页面
+            toLogin(){
+                location.href="http://localhost:8080/shop/login.html"
+            },
+
+            // 根据账号查询用户
+            isRegister(username){
+                // console.log(username)
+                // 失去焦点之后，发送ajax请求，判断该账号是否已经被注册
+                axios({
+                    method:"get",
+                    url:"http://localhost:8080/shop/user/selectUser?username="+username,
+
+                }).then( resp =>  {
+                    if (resp.data == "success"){
+                        // 可以使用该账号注册
+                        this.user = true;
+
+                    }else{
+                        // 不可以使用该账号注册
+                        this.user = false;
+                    }
+                })
+
+            },
+
+            // 注册
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        // alert('submit!');
+                        axios({
+                            method:"post",
+                            url:"http://localhost:8080/shop/user/add",
+                            data:this.ruleForm
+
+
+                        }).then( resp =>  {
+                            if (resp.data == "success"){
+                                // 注册成功
+
+                                // 提示信息
+                                this.$message({
+                                    message: "注册成功",
+                                    type: 'success',
+                                    duration:1000,
+                                    onClose:()=>{
+                                        // 跳转到登录界面
+                                        location.href="http://localhost:8080/shop/login.html"
+                                    }
+                                });
+
+
+                            }else{
+                                // 注册失败
+                                // 提示框
+                                this.$message.error('发生了未知的错误');
+                            }
+                        })
+
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+
+        },
+        data(){
+
+            // 自定义表单验证规则
+            var checkCode = (rule, value, callback) => {
+                if (this.checkCode == '') {
+                    return callback(new Error('请输入验证码'));
+                }else {
+                    callback();
+                }
+            };
+            return {
+                // 查询user 默认为 true 代表可以注册
+                user: true,
+
+                // 验证码
+                checkCode: "",
+
+                // url
+                url:"img/Register.jpg",
+
+                // 账号密码
+                ruleForm: {
+                    username:"",
+                    password:"",
+                },
+                // 注册提示信息
+                rules: {
+                    username: [
+                        {
+                            required: true,
+                            validator: (rule, value, callback) => {
+                                const reg = /^\S+$/
+                                if (value == '') {
+                                    callback(new Error('账号不可以为空'))
+                                } else if (!reg.test(value)) {
+                                    callback(new Error('账号不能有空格'))
+                                } else if (!this.user){
+                                    callback(new Error('该账号已经被注册'))
+                                    // 判断过后设置为 true 防止下次输入时没有被注册的账号也提示 该账号已经被注册
+                                    this.user = true
+                                } else {
+                                    callback()
+                                }
+                            },
+                            trigger: 'change'
+                        }
+                    ],
+                    password: [
+                        {
+                            required: true,
+                            validator: (rule, value, callback) => {
+                                // const reg = /^[a-zA-Z_\u4e00-\u9fa5]+$/ 汉字，字母，下划线
+                                /**
+                                 * const reg = /^[A-Z]\d{10}[a-z]{1,5}$/
+                                 * 第一位只能是大写字母，中间必须是10位数字，最后是不能多于5位的小写字母
+                                 * [] 里面的东西都是并列生效的
+                                 * @type {RegExp}
+                                 */
+                                const reg = /^\w{6,16}$/
+                                if (value == '') {
+                                    callback(new Error('密码不能为空'))
+                                } else if (!reg.test(value)) {
+                                    callback(new Error('密码由6-16位的数字、字母、下划线组成'))
+                                } else {
+                                    callback()
+                                }
+                            },
+                            trigger: 'change'
+                        }
+                    ],
+
+                    checkCode: [
+                        { validator: checkCode, trigger: 'blur' }
+                    ]
+
+                }
+
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

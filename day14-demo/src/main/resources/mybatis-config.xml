@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+     <!--相当于给pojo下的所有类起了一个别名: com.yukong.pojo-->
+    <typeAliases>
+        <package name="com.yukong.pojo"/>
+    </typeAliases>
+    <!--
+        environments：配置数据库连接环境信息，可以配置多个environment。通过default属性切换不同的environment
+    -->
+    <environments default="yukong">
+        <environment id="yukong">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <!--数据库连接信息-->
+                <property name="driver" value="com.mysql.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql:///yukong?useSSL=false&amp;useServerPrepStmts=true&amp;allowPublicKeyRetrieval=true"/>
+                <property name="username" value="root"/>
+                <property name="password" value="123456"/>
+            </dataSource>
+        </environment>
+    </environments>
+    <mappers>
+        <!--加载SQL映射文件-->
+        <!--<mapper resource="com/yukong/mapper/UserMapper.xml"/>-->
+        
+        <!--Mapper代理方式-->
+        <package name="com.yukong.mapper"/>
+    </mappers>
+</configuration>

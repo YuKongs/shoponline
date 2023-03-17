@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <link href="css/login.css" rel="stylesheet">
+    <style>
+        .el-checkbox{
+
+            margin-bottom: 5px;
+        }
+        .el-button{
+            width:110px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+<!--    <h1 id="title">电商后台管理系统</h1>-->
+
+    <div id="loginDiv">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" size="medium"  class="demo-ruleForm">
+            <h1 id="loginMsg">LOGIN IN</h1><br>
+
+            <el-form-item  prop="username">
+                <el-input
+                        placeholder="qq号/手机号/邮箱"
+                        v-model="ruleForm.username"
+                        prefix-icon="el-icon-user"
+                        clearable>
+                </el-input>
+            </el-form-item>
+
+            <el-form-item  prop="password">
+                <el-input
+                        placeholder="密码"
+                        v-model="ruleForm.password"
+                        prefix-icon="el-icon-lock"
+                        show-password>
+                </el-input>
+            </el-form-item>
+
+            <template>
+                <!-- `checked` 为 true 或 false -->
+                <el-checkbox v-model="checked" value="1" class="el-checkbox">记住密码</el-checkbox>
+            </template>
+
+            <el-form-item>
+                <el-button round type="primary" @click="submitForm('ruleForm')">登录</el-button>
+                <el-button round type="primary" @click="register">注册</el-button>
+
+            </el-form-item>
+
+        </el-form>
+    </div>
+
+</div>
+
+<script src="js/vue.js"></script>
+<!-- 引入样式 -->
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+<!-- 引入组件库 -->
+<script src="element-ui/lib/index.js"></script>
+<script src="js/axios-0.18.0.js"></script>
+<script src="js/cookie.js"></script>
+
+<script>
+    new Vue({
+        el:"#app",
+        // 改动2
+        beforeCreate(){
+            // 做是否登录判断
+            /*if(localStorage.getItem('loginStatus')=='1') {
+                window.location.href="http://localhost:8080/shop/brand.html"
+            }*/
+
+            // 实现记住密码
+            axios({
+                // 这个设置也先放这！
+                // withCredentials: true,
+                method:"get",
+                url:"http://localhost:8080/shop/user/rememberCode",
+
+            }).then( resp => {
+
+                /**
+                 * 创建的数据模型，类型和属性一定要和响应过来的数据的类型和属性一样
+                 */
+                //[{"name":"username","value":"zyh"},{"name":"password","value":"123456"}]
+                this.ruleForm.username = resp.data[0].value
+                this.ruleForm.password = resp.data[1].value
+            })
+
+        },
+        mounted(){
+            console.log("输出账号和密码：")
+            console.log(this.ruleForm.username)
+            console.log(this.ruleForm.password)
+
+        },
+
+        methods:{
+
+            // 登录
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        // alert('submit!');
+                        axios({
+                            // 这个设置也先放这！
+                            withCredentials: true,
+                            method:"post",
+                            url:"http://localhost:8080/shop/user/select?checked="+this.checked,
+                            data:this.ruleForm
+
+
+
+                        }).then( resp =>  {
+                            if (resp.data == "success"){
+                                // 登录成功
+
+                                // 改动1
+                                const info = {
+                                    name:'test',
+                                    account:'admin1'
+                                }
+                                setCookie('test',1)
+                                // 下面这两句话现在不明白
+                                localStorage.setItem("loginStatus",'1')
+                                localStorage.setItem("userInfo",info.name)
+
+                                // 提示信息
+                                this.$message({
+                                    message: "登录成功",
+                                    type: 'success',
+                                    duration:500,
+                                    onClose:()=>{
+
+                                        // 跳转到店铺界面
+                                        location.href="http://localhost:8080/shop/brand.html"
+                                    }
+                                });
+
+
+                            }else{
+                                // 登录失败
+                                // 提示框
+                                this.$message({
+                                    message: '账号或密码错误！',
+                                    type: 'error'
+                                });
+                            }
+                        })
+
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+            // 注册
+            register(){
+                location.href="http://localhost:8080/shop/register.html"
+            }
+
+        },
+        data(){
+            return {
+
+                // 复选框
+                checked: false,
+
+                // 账号密码
+                ruleForm: {
+                    username:"",
+                    password:""
+
+                },
+                // 登录提示信息
+                rules: {
+                    username: [
+                        {required: true, message: '请输入账号', trigger: 'blur'},
+                        {
+                            required: true,
+                            validator: (rule, value, callback) => {
+                                // const reg = /^[a-zA-Z_\u4e00-\u9fa5]+$/ 汉字，字母，下划线
+                                const reg = /^\S+$/
+                                if (value == '') {
+                                    callback(new Error('请填写必填项'))
+                                } else if (!reg.test(value)) {
+                                    callback(new Error('账号不能有空格'))
+                                } else {
+                                    callback()
+                                }
+                            },
+                            trigger: 'blur'
+                        }
+                    ],
+                    password: [
+                        {required: true, message: '请输入密码', trigger: 'change'},
+                    ]
+
+                }
+
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
